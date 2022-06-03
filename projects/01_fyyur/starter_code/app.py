@@ -41,22 +41,22 @@ migrate = Migrate(app, db)
 class Venue(db.Model):
     __tablename__ = 'Venue'
 
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String)
-    city = db.Column(db.String(120))
-    state = db.Column(db.String(120))
-    address = db.Column(db.String(120))
-    phone = db.Column(db.String(120))
-    image_link = db.Column(db.String(500))
-    facebook_link = db.Column(db.String(120))
+    id = db.Column(db.Integer, primary_key=True, nullable=False)
+    name = db.Column(db.String, nullable=True)
+    city = db.Column(db.String(120), nullable=True)
+    state = db.Column(db.String(120), nullable=True)
+    address = db.Column(db.String(120), nullable=True)
+    phone = db.Column(db.String(120), nullable=True)
+    image_link = db.Column(db.String(500), nullable=True)
+    facebook_link = db.Column(db.String(120), nullable=True)
 
     # TODO: implement any missing fields, as a database migration using Flask-Migrate
-    genres = db.Column(db.String(500))
-    website_link = db.Column(db.String(120))
-    talent_search = db.Column(db.Boolean, default=False)
-    seeking_description = db.Column(db.Text)
+    genres = db.Column(db.String(500), nullable=True)
+    website_link = db.Column(db.String(120), nullable=True)
+    talent_search = db.Column(db.Boolean, default=False, nullable=False)
+    seeking_description = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime(timezone=True),
-                           server_default=func.now())
+                           server_default=func.now(), nullable=False)
 
     # Shows relationship column
     show = db.relationship('Show', backref='show_venue',
@@ -69,21 +69,21 @@ class Venue(db.Model):
 class Artist(db.Model):
     __tablename__ = 'Artist'
 
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String)
-    city = db.Column(db.String(120))
-    state = db.Column(db.String(120))
-    phone = db.Column(db.String(120))
-    genres = db.Column(db.String(120))
-    image_link = db.Column(db.String(500))
-    facebook_link = db.Column(db.String(120))
+    id = db.Column(db.Integer, primary_key=True, nullable=False)
+    name = db.Column(db.String, nullable=True)
+    city = db.Column(db.String(120), nullable=True)
+    state = db.Column(db.String(120), nullable=True)
+    phone = db.Column(db.String(120), nullable=True)
+    genres = db.Column(db.String(120), nullable=True)
+    image_link = db.Column(db.String(500), nullable=True)
+    facebook_link = db.Column(db.String(120), nullable=True)
 
     # TODO: implement any missing fields, as a database migration using Flask-Migrate
-    website_link = db.Column(db.String(120))
-    venue_search = db.Column(db.Boolean, default=False)
-    description = db.Column(db.Text)
+    website_link = db.Column(db.String(120), nullable=True)
+    venue_search = db.Column(db.Boolean, default=False, nullable=False)
+    description = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime(timezone=True),
-                           server_default=func.now())
+                           server_default=func.now(), nullable=True)
 
     # Shows relationship Column
     show = db.relationship('Show', backref='show_artist',
