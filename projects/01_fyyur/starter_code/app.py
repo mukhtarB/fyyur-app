@@ -58,6 +58,10 @@ class Venue(db.Model):
     created_at = db.Column(db.DateTime(timezone=True),
                            server_default=func.now())
 
+    # Shows relationship column
+    show = db.relationship('Show', backref='show_venue',
+                           lazy=True, cascade='all, delete')
+
     def __repr__(self) -> str:
         return f'<Venue {self.id}, {self.name}>'
 
@@ -81,12 +85,27 @@ class Artist(db.Model):
     created_at = db.Column(db.DateTime(timezone=True),
                            server_default=func.now())
 
+    # Shows relationship Column
+    show = db.relationship('Show', backref='show_artist',
+                           lazy=True, cascade='all, delete')
+
     def __repr__(self) -> str:
         return f'<Artist {self.id}, {self.name}>'
 
 
 # TODO Implement Show and Artist models, and complete all model relationships and properties, as a database migration.
+class Show(db.Model):
+    __tablename__ = 'Shows'
+    id = db.Column(db.Integer, primary_key=True, nullable=False)
+    event_date = db.Column(db.DateTime)
+    artist_id = db.Column(db.Integer, db.ForeignKey(
+        'Artist.id'), nullable=False)
+    venue_id = db.Column(db.Integer, db.ForeignKey('Venue.id'), nullable=False)
+    created_at = db.Column(db.DateTime(timezone=True),
+                           server_default=func.now())
 
+    def __repr__(self) -> str:
+        return f'<Show {self.id}, artist: {self.venue_id}, location: {self.venue_id}>'
 
 #----------------------------------------------------------------------------#
 # Filters.
