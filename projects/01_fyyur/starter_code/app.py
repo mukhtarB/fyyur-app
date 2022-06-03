@@ -2,9 +2,11 @@
 # Imports
 #----------------------------------------------------------------------------#
 
+from email.policy import default
 import json
 import dateutil.parser
 import babel
+from pytz import timezone
 from flask import Flask, render_template, request, Response, flash, redirect, url_for
 from flask_moment import Moment
 from flask_sqlalchemy import SQLAlchemy
@@ -12,9 +14,11 @@ import logging
 from logging import Formatter, FileHandler
 from flask_wtf import Form
 from forms import *
+
 # import migrate from flask migrate
 from flask_migrate import Migrate
-
+import datetime
+from sqlalchemy.sql import func  # to set default datetime later
 
 #----------------------------------------------------------------------------#
 # App Config.
@@ -47,6 +51,15 @@ class Venue(db.Model):
     facebook_link = db.Column(db.String(120))
 
     # TODO: implement any missing fields, as a database migration using Flask-Migrate
+    genres = db.Column(db.String(500))
+    website_link = db.Column(db.String(120))
+    talent_search = db.Column(db.Boolean, default=False)
+    seeking_description = db.Column(db.Text)
+    created_at = db.Column(db.DateTime(timezone=True),
+                           server_default=func.now())
+
+    def __repr__(self) -> str:
+        return f'<Venue {self.id}, {self.name}>'
 
 
 class Artist(db.Model):
