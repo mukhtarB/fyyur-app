@@ -75,6 +75,15 @@ class Artist(db.Model):
     facebook_link = db.Column(db.String(120))
 
     # TODO: implement any missing fields, as a database migration using Flask-Migrate
+    website_link = db.Column(db.String(120))
+    venue_search = db.Column(db.Boolean, default=False)
+    description = db.Column(db.Text)
+    created_at = db.Column(db.DateTime(timezone=True),
+                           server_default=func.now())
+
+    def __repr__(self) -> str:
+        return f'<Artist {self.id}, {self.name}>'
+
 
 # TODO Implement Show and Artist models, and complete all model relationships and properties, as a database migration.
 
