@@ -17,7 +17,7 @@ from forms import *
 
 # import migrate from flask migrate
 from flask_migrate import Migrate
-import datetime
+from datetime import datetime
 from sqlalchemy.sql import func  # to set default datetime later
 
 #----------------------------------------------------------------------------#
@@ -138,34 +138,36 @@ def index():
 #  ----------------------------------------------------------------
 
 
+# venue list page
 @app.route('/venues')
 def venues():
     # TODO: replace with real venues data.
     #       num_upcoming_shows should be aggregated based on number of upcoming shows per venue.
-    data = [{
-        "city": "San Francisco",
-        "state": "CA",
-        "venues": [{
-            "id": 1,
-            "name": "The Musical Hop",
-            "num_upcoming_shows": 0,
-        }, {
-            "id": 3,
-            "name": "Park Square Live Music & Coffee",
-            "num_upcoming_shows": 1,
-        }]
-    }, {
-        "city": "New York",
-        "state": "NY",
-        "venues": [{
-            "id": 2,
-            "name": "The Dueling Pianos Bar",
-            "num_upcoming_shows": 0,
-        }]
-    }]
+    venue_qs = Venue.query.all()
+    data = []
+    loc_set = set()
+
+    for venue in venue_qs:
+        # grab all states and city in db
+        loc_set.add((venue.state, venue.city))
+
+        for iterate in loc_set:
+            if iterate[0] == venue.state and iterate[1] == venue.city:
+                data_Item = {
+                    'city': venue.city,
+                    'state': venue.state,
+                    'venues': [{
+                        'id': venue.id,
+                        'name': venue.name,
+                        'num_upcoming_shows': venue.show.__len__(),
+                    }],
+                }
+                data.append(data_Item)
+
     return render_template('pages/venues.html', areas=data)
 
 
+# venue search result page
 @app.route('/venues/search', methods=['POST'])
 def search_venues():
     # TODO: implement search on venues with partial string search. Ensure it is case-insensitive.
@@ -182,6 +184,7 @@ def search_venues():
     return render_template('pages/search_venues.html', results=response, search_term=request.form.get('search_term', ''))
 
 
+# venue details page
 @app.route('/venues/<int:venue_id>')
 def show_venue(venue_id):
     # shows the venue page with the given venue_id
