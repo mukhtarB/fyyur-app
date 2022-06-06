@@ -347,15 +347,21 @@ def search_artists():
     # seach for "A" should return "Guns N Petals", "Matt Quevado", and "The Wild Sax Band".
     # search for "band" should return "The Wild Sax Band".
     search_keyword = request.form.get('search_term', None)
+
     qs = Artist.query.filter(Artist.name.ilike(f'%{search_keyword}%'))
 
     data = []
-    for result in qs.all():
+    for artist in qs.all():
+
         data.append({
-            'id': result.id,
-            'name': result.name,
-            'num_upcoming_shows': len(result.show),
+            'id': artist.id,
+            'name': artist.name,
+            'num_upcoming_shows': Show.query
+            .filter(Show.artist_id == artist.id)
+            .filter(Show.event_date > datetime.now())
+            .count()
         })
+        print(data)
 
     response = {
         "count": qs.count(),
