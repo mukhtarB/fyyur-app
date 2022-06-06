@@ -76,6 +76,30 @@
 </section>
 
 <a href="/venues/{{ venue.id }}/edit"><button class="btn btn-primary btn-lg">Edit</button></a>
+<a href="" id = "delBtn"><button class="btn btn-danger btn-lg">Delete</button></a>
+
+<!-- implement delete functionality via async js: fetch -->
+<script>
+document.querySelector('#delBtn').addEventListener('click', (event) => {
+	event.preventDefault();
+	// send req
+	url = '/venues/{{ venue.id }}/del';
+	bodyParams = {
+		method: 'DELETE',
+		headers: {
+			'Content-Type': 'application/json'
+		},
+	}
+	fetch(url, bodyParams)
+	.then(response => response.json())
+	.then(jsonResponse => {
+		console.log(jsonResponse)
+		// redirect to venues page
+		location.href = "/venues";
+	})
+	.catch(err => console.log(err));
+})
+</script>
 
 {% endblock %}
 
