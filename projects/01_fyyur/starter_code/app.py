@@ -7,7 +7,7 @@ import json
 import dateutil.parser
 import babel
 from pytz import timezone
-from flask import Flask, render_template, request, Response, flash, redirect, url_for
+from flask import Flask, render_template, request, Response, flash, redirect, url_for, abort, jsonify
 from flask_moment import Moment
 from flask_sqlalchemy import SQLAlchemy
 import logging
@@ -211,29 +211,31 @@ def show_venue(venue_id):
     venue_qs = Venue.query.filter_by(id=venue_id)
     venue = venue_qs.first()
 
+    if not venue:  # if page does not exist rediirect to venue list
+        return redirect(url_for('venues'))
+
     show_artist_qs = db.session.query(Show, Artist).join(Artist).\
         filter(Show.venue_id == venue.id)
 
-    if venue:
-        data = {
-            "id": venue.id,
-            "name": venue.name,
-            "genres": venue.genres.split(", "),
-            "address": venue.address,
-            "city": venue.city,
-            "state": venue.state,
-            "phone": venue.phone,
-            "website": venue.website_link,
-            "facebook_link": venue.facebook_link,
-            "image_link": venue.image_link,
-            "seeking_talent": venue.talent_search,
-            "seeking_description": venue.seeking_description,
-            # about shows
-            "past_shows": [],
-            "upcoming_shows": [],
-            "past_shows_count": show_artist_qs.filter(Show.event_date < datetime.now()).count(),
-            "upcoming_shows_count": show_artist_qs.filter(Show.event_date > datetime.now()).count(),
-        }
+    data = {
+        "id": venue.id,
+        "name": venue.name,
+        "genres": venue.genres.split(", ") if venue.genres else '',
+        "address": venue.address,
+        "city": venue.city,
+        "state": venue.state,
+        "phone": venue.phone,
+        "website": venue.website_link,
+        "facebook_link": venue.facebook_link,
+        "image_link": venue.image_link,
+        "seeking_talent": venue.talent_search,
+        "seeking_description": venue.seeking_description,
+        # about shows
+        "past_shows": [],
+        "upcoming_shows": [],
+        "past_shows_count": show_artist_qs.filter(Show.event_date < datetime.now()).count(),
+        "upcoming_shows_count": show_artist_qs.filter(Show.event_date > datetime.now()).count(),
+    }
 
     for show, artist in show_artist_qs.filter(Show.event_date < datetime.now()).all():
         data['past_shows'].append({
@@ -287,8 +289,6 @@ def create_venue_submission():
         db.session.add(data)
         db.session.commit()
 
-        app.logger.info(data.id, data.name)
-
         # on successful db insert, flash success
         flash('Venue ' + request.form['name'] + ' was successfully listed!')
     except:
@@ -304,22 +304,31 @@ def create_venue_submission():
     return render_template('pages/home.html')
 
 
-@app.route('/venues/<venue_id>', methods=['DELETE'])
+# NB: modified url route a bit
+@app.route('/venues/<venue_id>/del', methods=['DELETE'])
 def delete_venue(venue_id):
     # TODO: Complete this endpoint for taking a venue_id, and using
     # SQLAlchemy ORM to delete a record. Handle cases where the session commit could fail.
+    error = False
     try:
         loc = Venue.query.get(venue_id)
         db.session.delete(loc)
         db.session.commit()
     except:
+        error = True
         db.session.rollback()
     finally:
         db.session.close()
 
     # BONUS CHALLENGE: Implement a button to delete a Venue on a Venue Page, have it so that
     # clicking that button delete it from the db then redirect the user to the homepage
-    return None
+
+    # implemented on venues details page /venues/<venue_id>;
+    if error:
+        abort(400)
+        return jsonify({'successful?': False})
+    else:
+        return jsonify({'successful?': True})
 
 
 #  Artists
