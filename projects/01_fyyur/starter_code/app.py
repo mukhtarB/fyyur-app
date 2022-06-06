@@ -86,7 +86,7 @@ class Artist(db.Model):
                            server_default=func.now(), nullable=True)
 
     # Shows relationship Column
-    show = db.relationship('Show', backref='show_artist',
+    show = db.relationship('Show', backref='show_artist_qs',
                            lazy=True, cascade='all, delete')
 
     def __repr__(self) -> str:
@@ -188,7 +188,10 @@ def search_venues():
         data.append({
             'id': result.id,
             'name': result.name,
-            'num_upcoming_shows': len(result.show),
+            'num_upcoming_shows': Show.query
+            .filter(Show.venue_id == result.id)
+            .filter(Show.event_date > datetime.now())
+            .count()
         })
 
     response = {
@@ -203,47 +206,54 @@ def search_venues():
 def show_venue(venue_id):
     # shows the venue page with the given venue_id
     # TODO: replace with real venue data from the venues table, using venue_id
+    data = {}
 
-    data3 = {
-        "id": 3,
-        "name": "Park Square Live Music & Coffee",
-        "genres": ["Rock n Roll", "Jazz", "Classical", "Folk"],
-        "address": "34 Whiskey Moore Ave",
-        "city": "San Francisco",
-        "state": "CA",
-        "phone": "415-000-1234",
-        "website": "https://www.parksquarelivemusicandcoffee.com",
-        "facebook_link": "https://www.facebook.com/ParkSquareLiveMusicAndCoffee",
-        "seeking_talent": False,
-        "image_link": "https://images.unsplash.com/photo-1485686531765-ba63b07845a7?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=747&q=80",
-        "past_shows": [{
-            "artist_id": 5,
-            "artist_name": "Matt Quevedo",
-            "artist_image_link": "https://images.unsplash.com/photo-1495223153807-b916f75de8c5?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=334&q=80",
-            "start_time": "2019-06-15T23:00:00.000Z"
-        }],
-        "upcoming_shows": [{
-            "artist_id": 6,
-            "artist_name": "The Wild Sax Band",
-            "artist_image_link": "https://images.unsplash.com/photo-1558369981-f9ca78462e61?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=794&q=80",
-            "start_time": "2035-04-01T20:00:00.000Z"
-        }, {
-            "artist_id": 6,
-            "artist_name": "The Wild Sax Band",
-            "artist_image_link": "https://images.unsplash.com/photo-1558369981-f9ca78462e61?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=794&q=80",
-            "start_time": "2035-04-08T20:00:00.000Z"
-        }, {
-            "artist_id": 6,
-            "artist_name": "The Wild Sax Band",
-            "artist_image_link": "https://images.unsplash.com/photo-1558369981-f9ca78462e61?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=794&q=80",
-            "start_time": "2035-04-15T20:00:00.000Z"
-        }],
-        "past_shows_count": 1,
-        "upcoming_shows_count": 1,
-    }
-    # data = list(filter(lambda d: d['id'] ==
-    #             venue_id, [data1, data2, data3]))[0]
-    return render_template('pages/show_venue.html', venue=data3)
+    venue_qs = Venue.query.filter_by(id=venue_id)
+    venue = venue_qs.first()
+
+    show_artist_qs = db.session.query(Show, Artist).join(Artist).\
+        filter(Show.venue_id == venue.id)
+
+    if venue:
+        data = {
+            "id": venue.id,
+            "name": venue.name,
+            "genres": venue.genres.split(", "),
+            "address": venue.address,
+            "city": venue.city,
+            "state": venue.state,
+            "phone": venue.phone,
+            "website": venue.website_link,
+            "facebook_link": venue.facebook_link,
+            "image_link": venue.image_link,
+            "seeking_talent": venue.talent_search,
+            "seeking_description": venue.seeking_description,
+            # about shows
+            "past_shows": [],
+            "upcoming_shows": [],
+            "past_shows_count": show_artist_qs.filter(Show.event_date < datetime.now()).count(),
+            "upcoming_shows_count": show_artist_qs.filter(Show.event_date > datetime.now()).count(),
+        }
+
+    for show, artist in show_artist_qs.filter(Show.event_date < datetime.now()).all():
+        print("Show date: {} Artist Name: {}"
+              .format(show.event_date, artist.name), "\n\n")
+        data['past_shows'].append({
+            "artist_id": artist.id,
+            "artist_name": artist.name,
+            "artist_image_link": artist.image_link,
+            "start_time": f'{show.event_date}'
+        })
+
+    for show, artist in show_artist_qs.filter(Show.event_date > datetime.now()).all():
+        data['upcoming_shows'].append({
+            "artist_id": artist.id,
+            "artist_name": artist.name,
+            "artist_image_link": artist.image_link,
+            "start_time": f'{show.event_date}'
+        })
+
+    return render_template('pages/show_venue.html', venue=data)
 
 
 #  Create Venue
@@ -331,7 +341,7 @@ def search_artists():
 
 
 @app.route('/artists/<int:artist_id>')
-def show_artist(artist_id):
+def show_artist_qs(artist_id):
     # shows the artist page with the given artist_id
     # TODO: replace with real artist data from the artist table, using artist_id
     data1 = {
@@ -407,7 +417,7 @@ def show_artist(artist_id):
     }
     data = list(filter(lambda d: d['id'] ==
                 artist_id, [data1, data2, data3]))[0]
-    return render_template('pages/show_artist.html', artist=data)
+    return render_template('pages/show_artist_qs.html', artist=data)
 
 
 #  Update
@@ -439,7 +449,7 @@ def edit_artist_submission(artist_id):
     # TODO: take values from the form submitted, and update existing
     # artist record with ID <artist_id> using the new attributes
 
-    return redirect(url_for('show_artist', artist_id=artist_id))
+    return redirect(url_for('show_artist_qs', artist_id=artist_id))
 
 
 @app.route('/venues/<int:venue_id>/edit', methods=['GET'])
